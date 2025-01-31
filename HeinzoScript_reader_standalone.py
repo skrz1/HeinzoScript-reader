@@ -8,13 +8,17 @@ logging.getLogger('fpdf.output').level = logging.ERROR
 
 #############################################
 # import
+
+#application_path = os.path.dirname(sys.executable) # absolute path of exe
+application_path = os.path.dirname(__file__) # absolute path of python
+
 # import file data
 
 path2HS_init = ""
 path2HS_output = ""
 ext_out = ""
 
-with open("command4HSreader.txt", "r") as file:
+with open(application_path + "/command4HSreader.txt", "r") as file:
     for line in file:
         # strip whitespace from the line
         line = line.strip()
@@ -42,7 +46,7 @@ numbering_font_size = 0
 page_number = 0
 
 # read HS file data
-with open(str(path2HS_init), "r") as file:
+with open(str(application_path + "/" + path2HS_init), "r") as file:
     for line in file:
         # strip whitespace from the line
         line = line.strip()
@@ -96,12 +100,12 @@ else:
 
 # pdf particulars
 pdf_HS = FPDF(orientation, "mm", (200, 287))
-pdf_HS.add_font("Inconsolata", style="", fname="fontpack/Inconsolata_Condensed-Regular.ttf")
-pdf_HS.add_font("Inconsolata", style="B", fname="fontpack/Inconsolata_Condensed-ExtraBold.ttf")
-pdf_HS.add_font("Inconsolata-LGC", style="", fname="fontpack/Inconsolata-LGC.ttf")
-pdf_HS.add_font("Inconsolata-LGC", style="B", fname="fontpack/Inconsolata-LGC-Bold.ttf")
-pdf_HS.add_font("Inconsolata-LGC", style="I", fname="fontpack/Inconsolata-LGC-Italic.ttf")
-pdf_HS.add_font("Inconsolata-LGC", style="BI", fname="fontpack/Inconsolata-LGC-BoldItalic.ttf")
+pdf_HS.add_font("Inconsolata", style="", fname=application_path+"/fontpack/Inconsolata_Condensed-Regular.ttf")
+pdf_HS.add_font("Inconsolata", style="B", fname=application_path+"/fontpack/Inconsolata_Condensed-ExtraBold.ttf")
+pdf_HS.add_font("Inconsolata-LGC", style="", fname=application_path+"/fontpack/Inconsolata-LGC.ttf")
+pdf_HS.add_font("Inconsolata-LGC", style="B", fname=application_path+"/fontpack/Inconsolata-LGC-Bold.ttf")
+pdf_HS.add_font("Inconsolata-LGC", style="I", fname=application_path+"/fontpack/Inconsolata-LGC-Italic.ttf")
+pdf_HS.add_font("Inconsolata-LGC", style="BI", fname=application_path+"/fontpack/Inconsolata-LGC-BoldItalic.ttf")
 # add a page
 pdf_HS.add_page()
 pdf_HS.set_margin(0)
@@ -315,6 +319,7 @@ for x in file_txt:
 
             pdf_HS.multi_cell(width, mm_height, new_x=XPos.LMARGIN, new_y=YPos.NEXT, border=1, link=pdf_HS.image(image_path,x_image, y_image, x_size))
 
+file_txt.close()
 
 def add_page_numbers(input_pdf, output_pdf):
     doc = fitz.open(input_pdf)
@@ -330,7 +335,7 @@ def add_page_numbers(input_pdf, output_pdf):
             rect = fitz.Rect(0, 544, 813, 567)
 
         # Use insert_textbox with a custom font
-        page.insert_textbox(rect, text, fontsize=18, fontname="Inconsolata", fontfile="fontpack/Inconsolata_Condensed-Regular.ttf", align=1)
+        page.insert_textbox(rect, text, fontsize=18, fontname="Inconsolata", fontfile=application_path+"/fontpack/Inconsolata_Condensed-Regular.ttf", align=1)
 
     doc.save(output_pdf)
     doc.close()
