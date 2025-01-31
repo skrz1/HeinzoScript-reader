@@ -46,7 +46,7 @@ numbering_font_size = 0
 page_number = 0
 
 # read HS file data
-with open(str(application_path + "/" + path2HS_init), "r") as file:
+with open(str(path2HS_init), "r") as file:
     for line in file:
         # strip whitespace from the line
         line = line.strip()
