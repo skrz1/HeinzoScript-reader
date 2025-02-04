@@ -3,6 +3,7 @@ import os
 import fitz
 from fpdf import FPDF, XPos, YPos
 import logging
+import sys
 
 logging.getLogger('fpdf.output').level = logging.ERROR
 
@@ -12,13 +13,17 @@ logging.getLogger('fpdf.output').level = logging.ERROR
 #application_path = os.path.dirname(sys.executable) # absolute path of exe
 application_path = os.path.dirname(__file__) # absolute path of python
 
+# folders names
+fontpack_folder = "fontpack"
+
 # import file data
 
 path2HS_init = ""
 path2HS_output = ""
 ext_out = ""
 
-with open(application_path + "/command4HSreader.txt", "r") as file:
+command4HSreader_path = os.path.join(application_path, "command4HSreader.txt")
+with open(command4HSreader_path, "r") as file:
     for line in file:
         # strip whitespace from the line
         line = line.strip()
@@ -44,6 +49,7 @@ font_size = 0
 numbering = 0
 numbering_font_size = 0
 page_number = 0
+PPI = 600
 
 # read HS file data
 with open(str(path2HS_init), "r") as file:
@@ -73,6 +79,8 @@ with open(str(path2HS_init), "r") as file:
             numbering_font_size = int(value)
         elif key == "page_number":
             page_number = int(value)
+        elif key == "PPI":
+            PPI = int(value)
 
 
 #############################################
@@ -100,12 +108,12 @@ else:
 
 # pdf particulars
 pdf_HS = FPDF(orientation, "mm", (200, 287))
-pdf_HS.add_font("Inconsolata", style="", fname=application_path+"/fontpack/Inconsolata_Condensed-Regular.ttf")
-pdf_HS.add_font("Inconsolata", style="B", fname=application_path+"/fontpack/Inconsolata_Condensed-ExtraBold.ttf")
-pdf_HS.add_font("Inconsolata-LGC", style="", fname=application_path+"/fontpack/Inconsolata-LGC.ttf")
-pdf_HS.add_font("Inconsolata-LGC", style="B", fname=application_path+"/fontpack/Inconsolata-LGC-Bold.ttf")
-pdf_HS.add_font("Inconsolata-LGC", style="I", fname=application_path+"/fontpack/Inconsolata-LGC-Italic.ttf")
-pdf_HS.add_font("Inconsolata-LGC", style="BI", fname=application_path+"/fontpack/Inconsolata-LGC-BoldItalic.ttf")
+pdf_HS.add_font("Inconsolata", style="", fname=os.path.join(application_path, fontpack_folder, "Inconsolata_Condensed-Regular.ttf"))
+pdf_HS.add_font("Inconsolata", style="B", fname=os.path.join(application_path, fontpack_folder, "Inconsolata_Condensed-ExtraBold.ttf"))
+pdf_HS.add_font("Inconsolata-LGC", style="", fname=os.path.join(application_path, fontpack_folder, "Inconsolata-LGC.ttf"))
+pdf_HS.add_font("Inconsolata-LGC", style="B", fname=os.path.join(application_path, fontpack_folder, "Inconsolata-LGC-Bold.ttf"))
+pdf_HS.add_font("Inconsolata-LGC", style="I", fname=os.path.join(application_path, fontpack_folder, "Inconsolata-LGC-Italic.ttf"))
+pdf_HS.add_font("Inconsolata-LGC", style="BI", fname=os.path.join(application_path, fontpack_folder, "Inconsolata-LGC-BoldItalic.ttf"))
 # add a page
 pdf_HS.add_page()
 pdf_HS.set_margin(0)
@@ -114,18 +122,14 @@ if page_number == 1:
     max_page_h = (max_page_h - 7)
 
 # create path to main HS folder
-folder_dir_parts = path2HS_init.split("/")
-for i in range(len(folder_dir_parts)):
-    folder_dir_parts[i] += "/"
-del folder_dir_parts[len(folder_dir_parts)-1]
-folder_dir_parts.append(file_folder)
-folder_dir = "".join(folder_dir_parts)
+parent_folder, tail = os.path.split(path2HS_init)
+folder_dir = os.path.join(parent_folder, file_folder)
 
 #############################################
 # open HS folder
 
 # open the text file in read mode
-with open(str(folder_dir) + "/" + filename, "r", encoding="UTF-8") as count_lines:
+with open(os.path.join(folder_dir, filename), "r", encoding="UTF-8") as count_lines:
     lines_txt = count_lines.readlines()
 number_of_lines_txt = int(len(lines_txt))
 number_of_digits_linecount = len(str(number_of_lines_txt))
@@ -134,7 +138,7 @@ if numbering == 1 or numbering == 2:
     line_number_width = int(round(numbering_font_size*6/15*(number_of_digits_linecount+1)*0.3528, 1))
 elif numbering == 0:
     line_number_width = 0
-file_txt = open(str(folder_dir) + "/" + filename, "r", encoding="UTF-8")
+file_txt = open(os.path.join(folder_dir, filename), "r", encoding="UTF-8")
 
 line_number = 1
 fig_number = 1
@@ -238,7 +242,7 @@ for x in file_txt:
         image_cell_name = "".join(x_letters)
         x_letters.clear()
 
-        image_path = str(str(folder_dir) + "/" + str(image_cell_name))
+        image_path = os.path.join(folder_dir, image_cell_name)
         cell_image = cv2.imread(image_path)
         pixel_height, pixel_width, channel = cell_image.shape
 
@@ -335,7 +339,7 @@ def add_page_numbers(input_pdf, output_pdf):
             rect = fitz.Rect(0, 544, 813, 567)
 
         # Use insert_textbox with a custom font
-        page.insert_textbox(rect, text, fontsize=18, fontname="Inconsolata", fontfile=application_path+"/fontpack/Inconsolata_Condensed-Regular.ttf", align=1)
+        page.insert_textbox(rect, text, fontsize=18, fontname="Inconsolata", fontfile=os.path.join(application_path, fontpack_folder, "Inconsolata_Condensed-Regular.ttf"), align=1)
 
     doc.save(output_pdf)
     doc.close()
@@ -345,15 +349,8 @@ def add_page_numbers(input_pdf, output_pdf):
 # generate pdf file
 # create path to output folder
 
-output_name = ""
+path2HS_output_dir, output_name = os.path.split(path2HS_output)
 
-path2HS_output_parts = path2HS_output.split("/")
-for i in range(len(path2HS_output_parts)):
-    if i == len(path2HS_output_parts)-1:
-        output_name = path2HS_output_parts[i]
-    path2HS_output_parts[i] += "/"
-del path2HS_output_parts[len(path2HS_output_parts)-1]
-path2HS_output_dir = "".join(path2HS_output_parts)
 
 # create unique filename
 def get_unique_filename(folder_path, choosen_filename):
@@ -366,32 +363,28 @@ def get_unique_filename(folder_path, choosen_filename):
     return unique_filename
 
 if ext_out == ".pdf":
-    unique_filename_pdf = get_unique_filename(path2HS_output_dir, output_name + ".pdf")
-
+    unique_filename_pdf = get_unique_filename(path2HS_output_dir, f"{output_name + ".pdf"}")
     if page_number == 1:
-        pdf_HS.output(str(path2HS_output_dir) + "2137" + unique_filename_pdf)
-        add_page_numbers(str(path2HS_output_dir) + "2137" + unique_filename_pdf, str(path2HS_output_dir) + unique_filename_pdf)
-        os.remove(str(path2HS_output_dir) + "2137" + unique_filename_pdf)
+        pdf_HS.output(os.path.join(path2HS_output_dir, f"{"2137" + unique_filename_pdf}"))
+        add_page_numbers(os.path.join(path2HS_output_dir, f"{"2137" + unique_filename_pdf}"), os.path.join(path2HS_output_dir, unique_filename_pdf))
+        os.remove(os.path.join(path2HS_output_dir, f"{"2137" + unique_filename_pdf}"))
     else:
-        pdf_HS.output(str(path2HS_output_dir) + unique_filename_pdf)
+        pdf_HS.output(os.path.join(path2HS_output_dir, unique_filename_pdf))
 
 elif ext_out == ".png" or ext_out == ".jpg" or ext_out == ".jpeg":
-
     if page_number == 1:
-        pdf_HS.output(str(path2HS_output_dir) + "2137420.pdf")
-        add_page_numbers(str(path2HS_output_dir) + "2137420.pdf", str(path2HS_output_dir) + "213742069.pdf")
-        os.remove(str(path2HS_output_dir) + "2137420.pdf")
+        pdf_HS.output(os.path.join(path2HS_output_dir, "2137420.pdf"))
+        add_page_numbers(os.path.join(path2HS_output_dir, "2137420.pdf"), os.path.join(path2HS_output_dir, "213742069.pdf"))
+        os.remove(os.path.join(path2HS_output_dir, "2137420.pdf"))
     else:
-        pdf_HS.output(str(path2HS_output_dir) + "213742069.pdf")
+        pdf_HS.output(os.path.join(path2HS_output_dir, "213742069.pdf"))
 
-    pdf_document = fitz.open(str(path2HS_output_dir) + "213742069.pdf")
-    counter = 1
+    pdf_document = fitz.open(os.path.join(path2HS_output_dir, "213742069.pdf"))
     for page_num in range(len(pdf_document)):
         unique_filename_raster = get_unique_filename(path2HS_output_dir, output_name + "_" + str(page_num+1) + "-" + str(len(pdf_document)) + ext_out)
         page = pdf_document[page_num]
-        pix = page.get_pixmap(dpi=600)
-        output_path = str(path2HS_output_dir) + unique_filename_raster
+        pix = page.get_pixmap(dpi=PPI, clip=True)
+        output_path = os.path.join(path2HS_output_dir, unique_filename_raster)
         pix.save(output_path)
-        counter += 1
     pdf_document.close()
-    os.remove(str(path2HS_output_dir) + "213742069.pdf")
+    os.remove(os.path.join(path2HS_output_dir, "213742069.pdf"))
